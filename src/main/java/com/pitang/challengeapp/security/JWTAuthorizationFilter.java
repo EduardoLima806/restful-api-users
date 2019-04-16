@@ -33,23 +33,26 @@ public class JWTAuthorizationFilter extends BasicAuthenticationFilter {
 
 		String header = request.getHeader(SecurityConstants.HEADER_STRING);
 
+		if (header == null || !header.startsWith(SecurityConstants.TOKEN_PREFIX)) {
+			chain.doFilter(request, response);
+			return;
+		}
+		
 		try {
-			
-			if (header == null || !header.startsWith(SecurityConstants.TOKEN_PREFIX)) {
+
+			UsernamePasswordAuthenticationToken authentication;
+
+			authentication = (UsernamePasswordAuthenticationToken) TokenAuthenticationService
+					.getAuthentication(request);
+			if (authentication == null) {
 				throw new TokenNotSentException(null, null, null);
-			} else {
-
-				UsernamePasswordAuthenticationToken authentication;
-
-				authentication = (UsernamePasswordAuthenticationToken) TokenAuthenticationService
-						.getAuthentication(request);
-				SecurityContextHolder.getContext().setAuthentication(authentication);
-				chain.doFilter(request, response);
 			}
-
+			SecurityContextHolder.getContext().setAuthentication(authentication);
+			chain.doFilter(request, response);
 		} catch (Exception e) {
 			handleException(e, response);
 		}
+
 	}
 
 	private void handleException(Exception ex, HttpServletResponse response)
